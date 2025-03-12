@@ -1,0 +1,820 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="增肌训练计划，提供详细的训练动作指导、一周训练5天，休息2天，支持循环显示，包含进度记录、饮食建议等功能。">
+    <meta name="keywords" content="增肌, 训练计划, 杠铃肩推, 深蹲, 硬拉, 卧推, 健身, PWA">
+    <meta name="author" content="健身爱好者">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <link rel="manifest" href="manifest.json">
+    <title>增肌训练计划 - 一周循环</title>
+    <style>
+        :root {
+            --primary-color: #007BFF;
+            --hover-color: #0056b3;
+            --background-color: #f4f4f4;
+            --details-bg: #e8f0ff;
+            --table-border: #ddd;
+            --rest-day-bg: #f8d7da;
+            --rest-day-text: #5a1a20; /* 提高对比度 */
+            --success-color: #28a745;
+            --warning-color: #ffc107;
+        }
+
+        body.dark-mode {
+            --primary-color: #66b0ff;
+            --hover-color: #99c7ff;
+            --background-color: #1a1a1a;
+            --details-bg: #2c3e50;
+            --table-border: #444;
+            --rest-day-bg: #5c2d2d;
+            --rest-day-text: #f5c6cb;
+            --success-color: #2ecc71;
+            --warning-color: #f1c40f;
+        }
+
+        body.dark-mode .container {
+            background: #2a2a2a;
+            color: #f4f4f4;
+        }
+
+        body.dark-mode td {
+            background-color: #333;
+        }
+
+        body.dark-mode th {
+            background-color: var(--primary-color);
+        }
+
+        body.dark-mode .nutrition-tips {
+            background: var(--warning-color);
+            color: #1a1a1a;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background-color: var(--background-color);
+            padding: 20px;
+            text-align: center;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        h2 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            font-size: 16px;
+        }
+
+        th, td {
+            border: 1px solid var(--table-border);
+            padding: 10px;
+            text-align: center;
+        }
+
+        th {
+            background-color: var(--primary-color);
+            color: white;
+            font-weight: bold;
+        }
+
+        td {
+            background-color: #fff;
+        }
+
+        .rest-day {
+            background-color: var(--rest-day-bg);
+            color: var(--rest-day-text);
+            font-weight: bold;
+        }
+
+        .exercise {
+            background: var(--primary-color);
+            color: white;
+            padding: 8px;
+            border-radius: 5px;
+            cursor: pointer;
+            text-align: left;
+            font-weight: bold;
+            transition: background 0.3s ease;
+            display: block;
+            width: 100%;
+            border: none;
+            text-align: center;
+            margin-bottom: 5px;
+            position: relative;
+        }
+
+        .exercise:hover, .exercise:focus {
+            background: var(--hover-color);
+            outline: none;
+        }
+
+        .exercise:focus {
+            outline: 2px solid var(--primary-color);
+            outline-offset: 2px;
+        }
+
+        .exercise[aria-expanded="true"] {
+            background: var(--hover-color);
+        }
+
+        .exercise:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .exercise::after {
+            content: '';
+            display: none;
+            width: 16px;
+            height: 16px;
+            border: 2px solid white;
+            border-top: 2px solid transparent;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        .exercise.loading::after {
+            display: inline-block;
+        }
+
+        @keyframes spin {
+            0% { transform: translateY(-50%) rotate(0deg); }
+            100% { transform: translateY(-50%) rotate(360deg); }
+        }
+
+        .details {
+            display: none;
+            background: var(--details-bg);
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 5px;
+            text-align: left;
+            transition: max-height 0.3s ease;
+        }
+
+        .details[aria-hidden="false"] {
+            display: block;
+        }
+
+        .video-link {
+            color: var(--primary-color);
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        .video-link:hover {
+            color: var(--hover-color);
+        }
+
+        .progress-form {
+            margin-top: 10px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 5px;
+        }
+
+        .progress-form input, .progress-form textarea {
+            width: 100%;
+            padding: 5px;
+            margin: 5px 0;
+            border: 1px solid var(--table-border);
+            border-radius: 5px;
+        }
+
+        .progress-form button {
+            background: var(--success-color);
+            color: white;
+            padding: 5px 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .progress-form button:hover {
+            background: #218838;
+        }
+
+        .nutrition-tips {
+            background: var(--warning-color);
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+            color: #333;
+        }
+
+        @media (max-width: 600px) {
+            .container { padding: 10px; }
+            table, th, td { font-size: 14px; }
+            .exercise, .details { font-size: 12px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <button id="theme-toggle" class="exercise">切换深色模式</button>
+        <h2>增肌训练计划 - 一周循环</h2>
+        <p>以下为一周训练计划，训练 5 天，休息 2 天（周六、周日）。可循环执行。</p>
+        
+        <table>
+            <thead>
+                <tr>
+                    <th>星期</th>
+                    <th>训练内容</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>周一</td>
+                    <td>
+                        <button class="exercise" aria-expanded="false" aria-controls="monday_warmup" aria-label="展开周一热身详情" onclick="toggleDetails('monday_warmup')">热身</button>
+                        <div id="monday_warmup" class="details" aria-hidden="true">
+                            <p>1. 动态拉伸：肩部绕环、胸部开合 - 5 分钟</p>
+                            <p>2. 轻重量卧推热身 - 2 组 x 15 次</p>
+                        </div>
+
+                        <button class="exercise" aria-expanded="false" aria-controls="monday_bench_press" aria-label="展开周一杠铃卧推详情" onclick="toggleDetails('monday_bench_press')">杠铃卧推（主动作）</button>
+                        <div id="monday_bench_press" class="details" aria-hidden="true">
+                            <p>1. 仰卧在凳子上，双脚稳踏地面。</p>
+                            <p>2. 手握杠铃略宽于肩，控制下降至胸部。</p>
+                            <p>3. 发力向上推起至手臂伸直。</p>
+                            <p>组数：4 组 x 8-12 次，休息 90 秒</p>
+                            <p><a href="https://www.youtube.com/watch?v=4Y2ZdHCOXok" target="_blank" class="video-link">查看动作视频</a></p>
+                        </div>
+
+                        <button class="exercise" aria-expanded="false" aria-controls="monday_shoulder_press" aria-label="展开周一杠铃肩推详情" onclick="toggleDetails('monday_shoulder_press')">杠铃肩推（辅助动作）</button>
+                        <div id="monday_shoulder_press" class="details" aria-hidden="true">
+                            <p>1. 双手握住杠铃，略宽于肩。</p>
+                            <p>2. 挺胸收腹，站稳后向上推举。</p>
+                            <p>3. 最高点手臂伸直但不过度锁死。</p>
+                            <p>4. 缓慢下降回到起始位置。</p>
+                            <p>组数：3 组 x 10-12 次，休息 60 秒</p>
+                            <p><a href="https://www.youtube.com/watch?v=DYp1PrOSz1g" target="_blank" class="video-link">查看动作视频</a></p>
+                        </div>
+
+                        <button class="exercise" aria-expanded="false" aria-controls="monday_tricep" aria-label="展开周一三头肌下压详情" onclick="toggleDetails('monday_tricep')">三头肌下压（辅助动作）</button>
+                        <div id="monday_tricep" class="details" aria-hidden="true">
+                            <p>1. 使用绳索或直杆，站立姿势。</p>
+                            <p>2. 双手握住器械，肘部固定，向下压至手臂伸直。</p>
+                            <p>3. 缓慢回到起始位置。</p>
+                            <p>组数：3 组 x 12-15 次，休息 60 秒</p>
+                            <p><a href="https://www.youtube.com/watch?v=ktJ0qXvIFuM" target="_blank" class="video-link">查看动作视频</a></p>
+                        </div>
+
+                        <button class="exercise" aria-expanded="false" aria-controls="monday_core" aria-label="展开周一核心训练详情" onclick="toggleDetails('monday_core')">核心训练</button>
+                        <div id="monday_core" class="details" aria-hidden="true">
+                            <p>1. 平板支撑 - 3 组 x 30-60 秒</p>
+                            <p>2. 俄罗斯扭转 - 3 组 x 20 次</p>
+                        </div>
+
+                        <button class="exercise" aria-expanded="false" aria-controls="monday_cooldown" aria-label="展开周一拉伸详情" onclick="toggleDetails('monday_cooldown')">拉伸/放松</button>
+                        <div id="monday_cooldown" class="details" aria-hidden="true">
+                            <p>1. 胸部拉伸 - 每侧 30 秒</p>
+                            <p>2. 肩部拉伸 - 每侧 30 秒</p>
+                            <p>3. 三头肌拉伸 - 每侧 30 秒</p>
+                        </div>
+
+                        <button class="exercise" aria-expanded="false" aria-controls="monday_progress" aria-label="展开周一训练进度记录详情" onclick="toggleDetails('monday_progress')">记录训练进度</button>
+                        <div id="monday_progress" class="details" aria-hidden="true">
+                            <form class="progress-form" onsubmit="saveProgress(event, 'monday')">
+                                <label>杠铃卧推 - 重量 (kg):</label>
+                                <input type="number" name="monday_weight" placeholder="输入重量" required>
+                                <label>杠铃卧推 - 组数/次数:</label>
+                                <input type="text" name="monday_sets" placeholder="例如 4x10" required>
+                                <label>训练感受:</label>
+                                <textarea name="notes" placeholder="记录你的感受" rows="3"></textarea>
+                                <button type="submit">保存</button>
+                            </form>
+                        </div>
+
+                        <button class="exercise" aria-expanded="false" aria-controls="monday_nutrition" aria-label="展开周一饮食建议详情" onclick="toggleDetails('monday_nutrition')">饮食建议</button>
+                        <div id="monday_nutrition" class="details nutrition-tips" aria-hidden="true">
+                            <p>1. 蛋白质：摄入 1.6-2.2g/kg 体重的蛋白质，例如鸡胸肉、鱼、蛋白粉。</p>
+                            <p>2. 碳水化合物：训练后摄入高 GI 碳水，例如白米饭、香蕉。</p>
+                            <p>3. 脂肪：适量摄入健康脂肪，例如牛油果、坚果。</p>
+                        </div>
+                    </td>
+                </tr>
+
+                <!-- 周二：拉（背、肱二头） -->
+                <tr>
+                    <td>周二</td>
+                    <td>
+                        <button class="exercise" aria-expanded="false" aria-controls="tuesday_warmup" aria-label="展开周二热身详情" onclick="toggleDetails('tuesday_warmup')">热身</button>
+                        <div id="tuesday_warmup" class="details" aria-hidden="true">
+                            <p>1. 动态拉伸：背部拉伸、臂部绕环 - 5 分钟</p>
+                            <p>2. 轻重量引体向上或下拉热身 - 2 组 x 15 次</p>
+                        </div>
+
+                        <button class="exercise" aria-expanded="false" aria-controls="tuesday_deadlift" aria-label="展开周二硬拉详情" onclick="toggleDetails('tuesday_deadlift')">硬拉（主动作）</button>
+                        <div id="tuesday_deadlift" class="details" aria-hidden="true">
+                            <p>1. 双脚与肩同宽，膝盖微屈，臀部后移。</p>
+                            <p>2. 抓住杠铃，背部保持自然弯曲。</p>
+                            <p>3. 站起时用臀腿发力，收紧核心。</p>
+                            <p>组数：4 组 x 6-8 次，休息 90 秒</p>
+                            <p><a href="https://www.youtube.com/watch?v=yg1cZOxuW6o" target="_blank" class="video-link">查看动作视频</a></p>
+                        </div>
+
+                        <button class="exercise" aria-expanded="false" aria-controls="tuesday_pullup" aria-label="展开周二引体向上详情" onclick="toggleDetails('tuesday_pullup')">引体向上（辅助动作）</button>
+                        <div id="tuesday_pullup" class="details" aria-hidden="true">
+                            <p>1. 双手握住单杠，略宽于肩。</p>
+                            <p>2. 收紧核心，向上拉至下巴过杠。</p>
+                            <p>3. 缓慢下降至手臂伸直。</p>
+                            <p>组数：3 组 x 8-12 次，休息 60 秒</p>
+                            <p><a href="https://www.youtube.com/watch?v=FAJ2h-6r_0Q" target="_blank" class="video-link">查看动作视频</a></p>
+                        </div>
+
+                        <button class="exercise" aria-expanded="false" aria-controls="tuesday_bicep" aria-label="展开周二哑铃弯举详情" onclick="toggleDetails('tuesday_bicep')">哑铃弯举（辅助动作）</button>
+                        <div id="tuesday_bicep" class="details" aria-hidden="true">
+                            <p>1. 双手持哑铃，掌心向上。</p>
+                            <p>2. 肘部固定，向上弯举至肩部高度。</p>
+                            <p>3. 缓慢下降至起始位置。</p>
+                            <p>组数：3 组 x 12-15 次，休息 60 秒</p>
+                            <p><a href="https://www.youtube.com/watch?v=ykJmrZ5v0Oo" target="_blank" class="video-link">查看动作视频</a></p>
+                        </div>
+
+                        <button class="exercise" aria-expanded="false" aria-controls="tuesday_core" aria-label="展开周二核心训练详情" onclick="toggleDetails('tuesday_core')">核心训练</button>
+                        <div id="tuesday_core" class="details" aria-hidden="true">
+                            <p>1. 仰卧卷腹 - 3 组 x 15-20 次</p>
+                            <p>2. 侧平板支撑 - 每侧 3 组 x 30 秒</p>
+                        </div>
+
+                        <button class="exercise" aria-expanded="false" aria-controls="tuesday_cooldown" aria-label="展开周二拉伸详情" onclick="toggleDetails('tuesday_cooldown')">拉伸/放松</button>
+                        <div id="tuesday_cooldown" class="details" aria-hidden="true">
+                            <p>1. 背部拉伸 - 每侧 30 秒</p>
+                            <p>2. 肱二头肌拉伸 - 每侧 30 秒</p>
+                        </div>
+
+                        <button class="exercise" aria-expanded="false" aria-controls="tuesday_progress" aria-label="展开周二训练进度记录详情" onclick="toggleDetails('tuesday_progress')">记录训练进度</button>
+                        <div id="tuesday_progress" class="details" aria-hidden="true">
+                            <form class="progress-form" onsubmit="saveProgress(event, 'tuesday')">
+                                <label>硬拉 - 重量 (kg):</label>
+                                <input type="number" name="tuesday_weight" placeholder="输入重量" required>
+                                <label>硬拉 - 组数/次数:</label>
+                                <input type="text" name="tuesday_sets" placeholder="例如 4x6" required>
+                                <label>训练感受:</label>
+                                <textarea name="notes" placeholder="记录你的感受" rows="3"></textarea>
+                                <button type="submit">保存</button>
+                            </form>
+                        </div>
+
+                        <button class="exercise" aria-expanded="false" aria-controls="tuesday_nutrition" aria-label="展开周二饮食建议详情" onclick="toggleDetails('tuesday_nutrition')">饮食建议</button>
+                        <div id="tuesday_nutrition" class="details nutrition-tips" aria-hidden="true">
+                            <p>1. 蛋白质：摄入 1.6-2.2g/kg 体重的蛋白质，例如鸡胸肉、鱼、蛋白粉。</p>
+                            <p>2. 碳水化合物：训练后摄入高 GI 碳水，例如白米饭、香蕉。</p>
+                            <p>3. 脂肪：适量摄入健康脂肪，例如牛油果、坚果。</p>
+                        </div>
+                    </td>
+                </tr>
+
+                <!-- 周三：腿 -->
+                <tr>
+                    <td>周三</td>
+                    <td>
+                        <button class="exercise" aria-expanded="false" aria-controls="wednesday_warmup" aria-label="展开周三热身详情" onclick="toggleDetails('wednesday_warmup')">热身</button>
+                        <div id="wednesday_warmup" class="details" aria-hidden="true">
+                            <p>1. 动态拉伸：腿部拉伸、髋部开合 - 5 分钟</p>
+                            <p>2. 轻重量深蹲热身 - 2 组 x 15 次</p>
+                        </div>
+
+                        <button class="exercise" aria-expanded="false" aria-controls="wednesday_squat" aria-label="展开周三深蹲详情" onclick="toggleDetails('wednesday_squat')">深蹲（主动作）</button>
+                        <div id="wednesday_squat" class="details" aria-hidden="true">
+                            <p>1. 双脚与肩同宽，脚尖略朝外。</p>
+                            <p>2. 下蹲时保持背部直立，膝盖不超过脚尖。</p>
+                            <p>3. 下降至大腿与地面平行后站起。</p>
+                            <p>组数：4 组 x 8-12 次，休息 90 秒</p>
+                            <p><a href="https://www.youtube.com/watch?v=DYp1PrOSz1g" target="_blank" class="video-link">查看动作视频</a></p>
+                        </div>
+
+                        <button class="exercise" aria-expanded="false" aria-controls="wednesday_leg_press" aria-label="展开周三腿部推蹬机详情" onclick="toggleDetails('wednesday_leg_press')">腿部推蹬机（辅助动作）</button>
+                        <div id="wednesday_leg_press" class="details" aria-hidden="true">
+                            <p>1. 坐在推蹬机上，双脚放在平台上，肩宽距离。</p>
+                            <p>2. 膝盖微屈，推平台至腿部伸直但不过度锁死。</p>
+                            <p>3. 缓慢下降至起始位置。</p>
+                            <p>组数：3 组 x 10-12 次，休息 60 秒</p>
+                            <p><a href="https://www.youtube.com/watch?v=0kN3V5W0o0o" target="_blank" class="video-link">查看动作视频</a></p>
+                        </div>
+
+                        <button class="exercise" aria-expanded="false" aria-controls="wednesday_calf" aria-label="展开周三小腿提踵详情" onclick="toggleDetails('wednesday_calf')">小腿提踵（辅助动作）</button>
+                        <div id="wednesday_calf" class="details" aria-hidden="true">
+                            <p>1. 站在台阶或提踵机上，前脚掌着地。</p>
+                            <p>2. 脚跟向下沉至最低点，然后向上提起至最高点。</p>
+                            <p>组数：3 组 x 15-20 次，休息 60 秒</p>
+                            <p><a href="https://www.youtube.com/watch?v=7o5mL8TJKvE" target="_blank" class="video-link">查看动作视频</a></p>
+                        </div>
+
+                        <button class="exercise" aria-expanded="false" aria-controls="wednesday_core" aria-label="展开周三核心训练详情" onclick="toggleDetails('wednesday_core')">核心训练</button>
+                        <div id="wednesday_core" class="details" aria-hidden="true">
+                            <p>1. 仰卧抬腿 - 3 组 x 15-20 次</p>
+                            <p>2. 平板支撑 - 3 组 x 30-60 秒</p>
+                        </div>
+
+                        <button class="exercise" aria-expanded="false" aria-controls="wednesday_cooldown" aria-label="展开周三拉伸详情" onclick="toggleDetails('wednesday_cooldown')">拉伸/放松</button>
+                        <div id="wednesday_cooldown" class="details" aria-hidden="true">
+                            <p>1. 大腿前侧拉伸 - 每侧 30 秒</p>
+                            <p>2. 腘绳肌拉伸 - 每侧 30 秒</p>
+                            <p>3. 小腿拉伸 - 每侧 30 秒</p>
+                        </div>
+
+                        <button class="exercise" aria-expanded="false" aria-controls="wednesday_progress" aria-label="展开周三训练进度记录详情" onclick="toggleDetails('wednesday_progress')">记录训练进度</button>
+                        <div id="wednesday_progress" class="details" aria-hidden="true">
+                            <form class="progress-form" onsubmit="saveProgress(event, 'wednesday')">
+                                <label>深蹲 - 重量 (kg):</label>
+                                <input type="number" name="wednesday_weight" placeholder="输入重量" required>
+                                <label>深蹲 - 组数/次数:</label>
+                                <input type="text" name="wednesday_sets" placeholder="例如 4x10" required>
+                                <label>训练感受:</label>
+                                <textarea name="notes" placeholder="记录你的感受" rows="3"></textarea>
+                                <button type="submit">保存</button>
+                            </form>
+                        </div>
+
+                        <button class="exercise" aria-expanded="false" aria-controls="wednesday_nutrition" aria-label="展开周三饮食建议详情" onclick="toggleDetails('wednesday_nutrition')">饮食建议</button>
+                        <div id="wednesday_nutrition" class="details nutrition-tips" aria-hidden="true">
+                            <p>1. 蛋白质：摄入 1.6-2.2g/kg 体重的蛋白质，例如鸡胸肉、鱼、蛋白粉。</p>
+                            <p>2. 碳水化合物：训练后摄入高 GI 碳水，例如白米饭、香蕉。</p>
+                            <p>3. 脂肪：适量摄入健康脂肪，例如牛油果、坚果。</p>
+                        </div>
+                    </td>
+                </tr>
+
+                <!-- 周四：推（胸、肩、三头） -->
+                <tr>
+                    <td>周四</td>
+                    <td>
+                        <button class="exercise" aria-expanded="false" aria-controls="thursday_warmup" aria-label="展开周四热身详情" onclick="toggleDetails('thursday_warmup')">热身</button>
+                        <div id="thursday_warmup" class="details" aria-hidden="true">
+                            <p>1. 动态拉伸：肩部绕环、胸部开合 - 5 分钟</p>
+                            <p>2. 轻重量卧推热身 - 2 组 x 15 次</p>
+                        </div>
+
+                        <button class="exercise" aria-expanded="false" aria-controls="thursday_incline_bench" aria-label="展开周四上斜杠铃卧推详情" onclick="toggleDetails('thursday_incline_bench')">上斜杠铃卧推（主动作）</button>
+                        <div id="thursday_incline_bench" class="details" aria-hidden="true">
+                            <p>1. 仰卧在上斜凳上，双脚稳踏地面。</p>
+                            <p>2. 手握杠铃略宽于肩，控制下降至胸部上部。</p>
+                            <p>3. 发力向上推起至手臂伸直。</p>
+                            <p>组数：4 组 x 8-12 次，休息 90 秒</p>
+                            <p><a href="https://www.youtube.com/watch?v=4Y2ZdHCOXok" target="_blank" class="video-link">查看动作视频</a></p>
+                        </div>
+
+                        <button class="exercise" aria-expanded="false" aria-controls="thursday_dumbbell_press" aria-label="展开周四哑铃肩推详情" onclick="toggleDetails('thursday_dumbbell_press')">哑铃肩推（辅助动作）</button>
+                        <div id="thursday_dumbbell_press" class="details" aria-hidden="true">
+                            <p>1. 坐姿或站姿，双手持哑铃至肩部高度。</p>
+                            <p>2. 向上推举至手臂伸直但不过度锁死。</p>
+                            <p>3. 缓慢下降回到起始位置。</p>
+                            <p>组数：3 组 x 10-12 次，休息 60 秒</p>
+                            <p><a href="https://www.youtube.com/watch?v=DYp1PrOSz1g" target="_blank" class="video-link">查看动作视频</a></p>
+                        </div>
+
+                        <button class="exercise" aria-expanded="false" aria-controls="thursday_tricep" aria-label="展开周四仰卧臂屈伸详情" onclick="toggleDetails('thursday_tricep')">仰卧臂屈伸（辅助动作）</button>
+                        <div id="thursday_tricep" class="details" aria-hidden="true">
+                            <p>1. 仰卧在平凳上，双手持哑铃或杠铃。</p>
+                            <p>2. 肘部固定，缓慢下降至额头附近。</p>
+                            <p>3. 用三头肌发力推起至手臂伸直。</p>
+                            <p>组数：3 组 x 12-15 次，休息 60 秒</p>
+                            <p><a href="https://www.youtube.com/watch?v=ktJ0qXvIFuM" target="_blank" class="video-link">查看动作视频</a></p>
+                        </div>
+
+                        <button class="exercise" aria-expanded="false" aria-controls="thursday_core" aria-label="展开周四核心训练详情" onclick="toggleDetails('thursday_core')">核心训练</button>
+                        <div id="thursday_core" class="details" aria-hidden="true">
+                            <p>1. 平板支撑 - 3 组 x 30-60 秒</p>
+                            <p>2. 俄罗斯扭转 - 3 组 x 20 次</p>
+                        </div>
+
+                        <button class="exercise" aria-expanded="false" aria-controls="thursday_cooldown" aria-label="展开周四拉伸详情" onclick="toggleDetails('thursday_cooldown')">拉伸/放松</button>
+                        <div id="thursday_cooldown" class="details" aria-hidden="true">
+                            <p>1. 胸部拉伸 - 每侧 30 秒</p>
+                            <p>2. 肩部拉伸 - 每侧 30 秒</p>
+                            <p>3. 三头肌拉伸 - 每侧 30 秒</p>
+                        </div>
+
+                        <button class="exercise" aria-expanded="false" aria-controls="thursday_progress" aria-label="展开周四训练进度记录详情" onclick="toggleDetails('thursday_progress')">记录训练进度</button>
+                        <div id="thursday_progress" class="details" aria-hidden="true">
+                            <form class="progress-form" onsubmit="saveProgress(event, 'thursday')">
+                                <label>上斜杠铃卧推 - 重量 (kg):</label>
+                                <input type="number" name="thursday_weight" placeholder="输入重量" required>
+                                <label>上斜杠铃卧推 - 组数/次数:</label>
+                                <input type="text" name="thursday_sets" placeholder="例如 4x10" required>
+                                <label>训练感受:</label>
+                                <textarea name="notes" placeholder="记录你的感受" rows="3"></textarea>
+                                <button type="submit">保存</button>
+                            </form>
+                        </div>
+
+                        <button class="exercise" aria-expanded="false" aria-controls="thursday_nutrition" aria-label="展开周四饮食建议详情" onclick="toggleDetails('thursday_nutrition')">饮食建议</button>
+                        <div id="thursday_nutrition" class="details nutrition-tips" aria-hidden="true">
+                            <p>1. 蛋白质：摄入 1.6-2.2g/kg 体重的蛋白质，例如鸡胸肉、鱼、蛋白粉。</p>
+                            <p>2. 碳水化合物：训练后摄入高 GI 碳水，例如白米饭、香蕉。</p>
+                            <p>3. 脂肪：适量摄入健康脂肪，例如牛油果、坚果。</p>
+                        </div>
+                    </td>
+                </tr>
+
+                <!-- 周五：拉（背、肱二头） + 核心 -->
+                <tr>
+                    <td>周五</td>
+                    <td>
+                        <button class="exercise" aria-expanded="false" aria-controls="friday_warmup" aria-label="展开周五热身详情" onclick="toggleDetails('friday_warmup')">热身</button>
+                        <div id="friday_warmup" class="details" aria-hidden="true">
+                            <p>1. 动态拉伸：背部拉伸、臂部绕环 - 5 分钟</p>
+                            <p>2. 轻重量引体向上或下拉热身 - 2 组 x 15 次</p>
+                        </div>
+
+                        <button class="exercise" aria-expanded="false" aria-controls="friday_row" aria-label="展开周五杠铃划船详情" onclick="toggleDetails('friday_row')">杠铃划船（主动作）</button>
+                        <div id="friday_row" class="details" aria-hidden="true">
+                            <p>1. 双脚与肩同宽，膝盖微屈，身体前倾约 45 度。</p>
+                            <p>2. 双手握住杠铃，拉至腹部位置。</p>
+                            <p>3. 缓慢下降至起始位置。</p>
+                            <p>组数：4 组 x 8-12 次，休息 90 秒</p>
+                            <p><a href="https://www.youtube.com/watch?v=ptYtzlW7XWE" target="_blank" class="video-link">查看动作视频</a></p>
+                        </div>
+
+                        <button class="exercise" aria-expanded="false" aria-controls="friday_lat_pulldown" aria-label="展开周五高位下拉详情" onclick="toggleDetails('friday_lat_pulldown')">高位下拉（辅助动作）</button>
+                        <div id="friday_lat_pulldown" class="details" aria-hidden="true">
+                            <p>1. 坐姿，双手握住拉杆，略宽于肩。</p>
+                            <p>2. 向下拉至胸部位置，收紧背部。</p>
+                            <p>3. 缓慢回到起始位置。</p>
+                            <p>组数：3 组 x 10-12 次，休息 60 秒</p>
+                            <p><a href="https://www.youtube.com/watch?v=Axk4yXg2G_c" target="_blank" class="video-link">查看动作视频</a></p>
+                        </div>
+
+                        <button class="exercise" aria-expanded="false" aria-controls="friday_bicep" aria-label="展开周五锤式弯举详情" onclick="toggleDetails('friday_bicep')">锤式弯举（辅助动作）</button>
+                        <div id="friday_bicep" class="details" aria-hidden="true">
+                            <p>1. 双手持哑铃，掌心相对。</p>
+                            <p>2. 肘部固定，向上弯举至肩部高度。</p>
+                            <p>3. 缓慢下降至起始位置。</p>
+                            <p>组数：3 组 x 12-15 次，休息 60 秒</p>
+                            <p><a href="https://www.youtube.com/watch?v=ykJmrZ5v0Oo" target="_blank" class="video-link">查看动作视频</a></p>
+                        </div>
+
+                        <button class="exercise" aria-expanded="false" aria-controls="friday_core" aria-label="展开周五核心训练详情" onclick="toggleDetails('friday_core')">核心训练</button>
+                        <div id="friday_core" class="details" aria-hidden="true">
+                            <p>1. 仰卧卷腹 - 3 组 x 15-20 次</p>
+                            <p>2. 侧平板支撑 - 每侧 3 组 x 30 秒</p>
+                        </div>
+
+                        <button class="exercise" aria-expanded="false" aria-controls="friday_cooldown" aria-label="展开周五拉伸详情" onclick="toggleDetails('friday_cooldown')">拉伸/放松</button>
+                        <div id="friday_cooldown" class="details" aria-hidden="true">
+                            <p>1. 背部拉伸 - 每侧 30 秒</p>
+                            <p>2. 肱二头肌拉伸 - 每侧 30 秒</p>
+                        </div>
+
+                        <button class="exercise" aria-expanded="false" aria-controls="friday_progress" aria-label="展开周五训练进度记录详情" onclick="toggleDetails('friday_progress')">记录训练进度</button>
+                        <div id="friday_progress" class="details" aria-hidden="true">
+                            <form class="progress-form" onsubmit="saveProgress(event, 'friday')">
+                                <label>杠铃划船 - 重量 (kg):</label>
+                                <input type="number" name="friday_weight" placeholder="输入重量" required>
+                                <label>杠铃划船 - 组数/次数:</label>
+                                <input type="text" name="friday_sets" placeholder="例如 4x10" required>
+                                <label>训练感受:</label>
+                                <textarea name="notes" placeholder="记录你的感受" rows="3"></textarea>
+                                <button type="submit">保存</button>
+                            </form>
+                        </div>
+
+                        <button class="exercise" aria-expanded="false" aria-controls="friday_nutrition" aria-label="展开周五饮食建议详情" onclick="toggleDetails('friday_nutrition')">饮食建议</button>
+                        <div id="friday_nutrition" class="details nutrition-tips" aria-hidden="true">
+                            <p>1. 蛋白质：摄入 1.6-2.2g/kg 体重的蛋白质，例如鸡胸肉、鱼、蛋白粉。</p>
+                            <p>2. 碳水化合物：训练后摄入高 GI 碳水，例如白米饭、香蕉。</p>
+                            <p>3. 脂肪：适量摄入健康脂肪，例如牛油果、坚果。</p>
+                        </div>
+                    </td>
+                </tr>
+
+                <!-- 周六：休息 -->
+                <tr>
+                    <td class="rest-day">周六</td>
+                    <td class="rest-day">
+                        <p>休息日 - 建议进行轻度活动（如散步）或完全休息。</p>
+                        <button class="exercise" aria-expanded="false" aria-controls="saturday_nutrition" aria-label="展开周六饮食建议详情" onclick="toggleDetails('saturday_nutrition')">饮食建议</button>
+                        <div id="saturday_nutrition" class="details nutrition-tips" aria-hidden="true">
+                            <p>1. 蛋白质：保持 1.6-2.2g/kg 体重的蛋白质摄入。</p>
+                            <p>2. 碳水化合物：适量减少碳水摄入，但不要完全避免。</p>
+                            <p>3. 脂肪：适量摄入健康脂肪。</p>
+                        </div>
+                    </td>
+                </tr>
+
+                <!-- 周日：休息 -->
+                <tr>
+                    <td class="rest-day">周日</td>
+                    <td class="rest-day">
+                        <p>休息日 - 建议进行轻度活动（如瑜伽）或完全休息。</p>
+                        <button class="exercise" aria-expanded="false" aria-controls="sunday_nutrition" aria-label="展开周日饮食建议详情" onclick="toggleDetails('sunday_nutrition')">饮食建议</button>
+                        <div id="sunday_nutrition" class="details nutrition-tips" aria-hidden="true">
+                            <p>1. 蛋白质：保持 1.6-2.2g/kg 体重的蛋白质摄入。</p>
+                            <p>2. 碳水化合物：适量减少碳水摄入，但不要完全避免。</p>
+                            <p>3. 脂肪：适量摄入健康脂肪。</p>
+                        </div>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+
+        <p>训练完成后，可从周一重新开始，循环执行。</p>
+
+        <button class="exercise" aria-expanded="false" aria-controls="progress_summary" aria-label="展开训练进度查看详情" onclick="toggleDetails('progress_summary')">查看训练进度</button>
+        <div id="progress_summary" class="details" aria-hidden="true">
+            <p>以下是您记录的训练进度（数据保存在浏览器中）。</p>
+            <div id="progress_data"></div>
+            <button class="exercise" onclick="clearProgress()">清除所有记录</button>
+        </div>
+    </div>
+
+    <script>
+        function toggleDetails(id) {
+            const details = document.getElementById(id);
+            const button = document.querySelector(`[aria-controls="${id}"]`);
+            const isExpanded = button.getAttribute("aria-expanded") === "true";
+
+            button.setAttribute("aria-expanded", !isExpanded);
+            details.setAttribute("aria-hidden", isExpanded);
+        }
+
+        document.querySelectorAll('.exercise').forEach(button => {
+            button.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    button.click();
+                }
+            });
+            button.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                button.click();
+            });
+        });
+
+        let db;
+        const DB_NAME = 'TrainingProgressDB';
+        const STORE_NAME = 'progress';
+
+        function initDB() {
+            const request = indexedDB.open(DB_NAME, 1);
+            request.onupgradeneeded = event => {
+                db = event.target.result;
+                db.createObjectStore(STORE_NAME, { keyPath: 'id', autoIncrement: true });
+            };
+            request.onsuccess = event => {
+                db = event.target.result;
+                displayProgress();
+            };
+            request.onerror = event => {
+                console.error('IndexedDB 初始化失败:', event.target.error);
+            };
+        }
+
+        function saveProgress(event, day) {
+            event.preventDefault();
+            const form = event.target;
+            const button = form.querySelector('button');
+            button.classList.add('loading');
+            button.disabled = true;
+
+            const formData = new FormData(form);
+            const weight = formData.get(`${day}_weight`);
+            const sets = formData.get(`${day}_sets`);
+            const notes = formData.get('notes');
+
+            if (!weight || isNaN(weight) || weight <= 0) {
+                alert('请输入有效的重量（正数）！');
+                button.classList.remove('loading');
+                button.disabled = false;
+                return;
+            }
+
+            const setsPattern = /^\d+x\d+$/;
+            if (!setsPattern.test(sets)) {
+                alert('请输入有效的组数/次数，格式如 4x10！');
+                button.classList.remove('loading');
+                button.disabled = false;
+                return;
+            }
+
+            const progress = {
+                day,
+                weight,
+                sets,
+                notes,
+                date: new Date().toLocaleString()
+            };
+
+            const transaction = db.transaction([STORE_NAME], 'readwrite');
+            const store = transaction.objectStore(STORE_NAME);
+            store.add(progress);
+
+            transaction.oncomplete = () => {
+                button.classList.remove('loading');
+                button.disabled = false;
+                alert('进度已保存！');
+                form.reset();
+                displayProgress();
+            };
+            transaction.onerror = event => {
+                console.error('保存失败:', event.target.error);
+                button.classList.remove('loading');
+                button.disabled = false;
+            };
+        }
+
+        function displayProgress() {
+            const transaction = db.transaction([STORE_NAME], 'readonly');
+            const store = transaction.objectStore(STORE_NAME);
+            const request = store.getAll();
+
+            request.onsuccess = () => {
+                const progressData = request.result;
+                const progressDiv = document.getElementById('progress_data');
+                progressDiv.innerHTML = '';
+
+                const groupedData = {};
+                progressData.forEach(entry => {
+                    if (!groupedData[entry.day]) {
+                        groupedData[entry.day] = [];
+                    }
+                    groupedData[entry.day].push(entry);
+                });
+
+                for (const day in groupedData) {
+                    progressDiv.innerHTML += `<h3>${day}</h3>`;
+                    groupedData[day].forEach((entry, index) => {
+                        progressDiv.innerHTML += `
+                            <p>记录 ${index + 1} (${entry.date}):</p>
+                            <p>重量: ${entry.weight} kg</p>
+                            <p>组数/次数: ${entry.sets}</p>
+                            <p>感受: ${entry.notes || '无'}</p>
+                            <hr>
+                        `;
+                    });
+                }
+            };
+        }
+
+        function clearProgress() {
+            if (confirm('确定要清除所有训练进度吗？此操作不可恢复。')) {
+                const transaction = db.transaction([STORE_NAME], 'readwrite');
+                const store = transaction.objectStore(STORE_NAME);
+                store.clear();
+                transaction.oncomplete = () => {
+                    displayProgress();
+                    alert('所有记录已清除！');
+                };
+            }
+        }
+
+        window.addEventListener('load', () => {
+            initDB();
+            displayProgress();
+
+            document.getElementById('theme-toggle').addEventListener('click', () => {
+                document.body.classList.toggle('dark-mode');
+                const isDarkMode = document.body.classList.contains('dark-mode');
+                localStorage.setItem('theme', isDarkMode ? 'dark' : 'light');
+                document.getElementById('theme-toggle').textContent = isDarkMode ? '切换浅色模式' : '切换深色模式';
+            });
+
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme === 'dark') {
+                document.body.classList.add('dark-mode');
+                document.getElementById('theme-toggle').textContent = '切换浅色模式';
+            }
+
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('/service-worker.js')
+                    .then(registration => {
+                        console.log('Service Worker 注册成功:', registration);
+                    })
+                    .catch(error => {
+                        console.log('Service Worker 注册失败:', error);
+                    });
+            }
+        });
+    </script>
+</body>
+</html>
