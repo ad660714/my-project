@@ -48,3 +48,12 @@ td { background-color: #fff; }
 .login-form button, .register-form button { background: var(--success-color); color: white; padding: 10px; border: none; border-radius: 5px; cursor: pointer; }
 .chart-container { width: 100%; max-width: 800px; margin: 20px auto; padding: 20px; background: white; border-radius: 10px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); }
 canvas { max-width: 100%; }
+.video-container {
+    margin-top: 10px;
+    text-align: center;
+}
+.video-container iframe {
+    width: 100%;
+    max-width: 560px;
+    border-radius: 10px;
+}
