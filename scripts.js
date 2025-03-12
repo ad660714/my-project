@@ -6,7 +6,6 @@ const WEIGHT_STORE = 'weight';
 let currentUser = null;
 let weightChart, bodyWeightChart;
 let timerInterval;
-let challenges = [];
 
 const ACHIEVEMENTS = {
     'squat10': { name: '深蹲大师', desc: '完成10次深蹲', unlocked: false },
@@ -53,6 +52,16 @@ function updateUserInterface() {
         nameSpan.textContent = currentUser.username;
         weightSpan.textContent = currentUser.weight || '未记录';
         heightSpan.textContent = currentUser.height || '未记录';
+        calculateBMI();
+    }
+}
+
+function calculateBMI() {
+    if (currentUser && currentUser.weight && currentUser.height) {
+        const bmi = (currentUser.weight / ((currentUser.height / 100) ** 2)).toFixed(1);
+        document.getElementById('bmi').textContent = `BMI: ${bmi}`;
+    } else {
+        document.getElementById('bmi').textContent = 'BMI: 未记录';
     }
 }
 
@@ -154,48 +163,13 @@ function renderTrainingPlan() {
         { day: '周日', rest: true }
     ];
 
-    const table = document.getElementById('training-table');
-    if (!table) return;
-    table.innerHTML = '<thead><tr><th>星期</th><th>训练部位</th><th>训练内容</th></tr></thead><tbody></tbody>';
-    const tbody = table.querySelector('tbody');
-    const { fitnessLevel = 'intermediate', goal = 'muscle' } = currentUser || {};
-    const sets = { beginner: 3, intermediate: 3, advanced: 4 }[fitnessLevel];
-    const reps = { muscle: '8-12', strength: '4-6', endurance: '12-15' }[goal];
-    const rest = { beginner: 120, intermediate: 90, advanced: 60 }[fitnessLevel];
+    const today = new Date().toLocaleDateString('zh-CN', { weekday: 'long' }).replace('星期', '周');
+    const todayPlan = days.find(d => d.day === today) || { day: today, rest: true };
 
-    days.forEach(d => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `<td${d.rest ? ' class="rest-day"' : ''}>${d.day}</td>
-                        <td${d.rest ? ' class="rest-day"' : ''}>${d.rest ? '休息' : d.focus}</td>
-                        <td${d.rest ? ' class="rest-day"' : ''}></td>`;
-        const td = tr.querySelector('td:last-child');
-
-        if (d.rest) {
-            td.innerHTML = '<p>休息日 - 建议进行轻度活动或完全休息。</p>';
-        } else {
-            d.exercises.forEach((exercise, i) => {
-                const id = `${d.day}_exercise_${i}`;
-                let videoButton = exercise.video ? `<button class="exercise" onclick="toggleVideo('${id}')">查看示范</button>` : '';
-                td.innerHTML += `
-                    <button class="exercise" onclick="toggleDetails('${id}')">${exercise.name}</button>
-                    <div id="${id}" class="details">
-                        <p>组数：${sets} 组 x ${reps} 次，休息 ${rest} 秒</p>
-                        <form class="progress-form" onsubmit="saveProgress(event, '${exercise.name}')">
-                            <input type="number" name="weight" placeholder="本次重量 (kg)" required>
-                            <input type="number" name="reps" placeholder="完成次数" required>
-                            <button type="submit">记录</button>
-                        </form>
-                        <div id="progress_${id}"></div>
-                        ${videoButton}
-                        <div id="video_${id}" class="video-container" style="display: none;">
-                            ${exercise.video ? `<iframe width="560" height="315" src="${exercise.video}" scrolling="no" border="0" frameborder="0" allow="autoplay; fullscreen" allowfullscreen></iframe>` : ''}
-                        </div>
-                    </div>
-                `;
-            });
-        }
-        tbody.appendChild(tr);
-    });
+    document.getElementById('today-training').innerHTML = `
+        <h3>今日训练 (${today})</h3>
+        <p>${todayPlan.rest ? '休息日 - 建议进行轻度活动或完全休息。' : `${todayPlan.focus}: ${todayPlan.exercises.map(e => e.name).join(', ')}`}</p>
+    `;
 }
 
 function toggleVideo(id) {
@@ -242,13 +216,13 @@ function saveProgress(event, exerciseName) {
     const transaction = db.transaction([PROGRESS_STORE], 'readwrite');
     const store = transaction.objectStore(PROGRESS_STORE);
     store.add(progressRecord);
-    updateChallengeProgress(reps);
 
     transaction.oncomplete = () => {
         alert('训练记录已保存！');
         event.target.reset();
         renderProgressCharts();
         checkAchievements();
+        displayTrainingRecords();
     };
 }
 
@@ -293,6 +267,7 @@ function updateUserWeight(weightRecord) {
             currentUser = user;
             updateUserInterface();
             renderProgressCharts();
+            calculateBMI();
         }
     };
 }
@@ -325,32 +300,24 @@ function renderProgressCharts() {
             options: { scales: { x: { type: 'time' } } }
         });
     };
-
-    const progressTx = db.transaction([PROGRESS_STORE], 'readonly');
-    const progressStore = progressTx.objectStore(PROGRESS_STORE);
-    const progressRequest = progressStore.index('user').getAll(currentUser.username);
-
-    progressRequest.onsuccess = () => {
-        const progressData = progressRequest.result.map(p => ({ x: p.date, y: p.weight }));
-        if (weightChart) weightChart.destroy();
-        weightChart = new Chart(document.getElementById('weightChart'), {
-            type: 'line',
-            data: { datasets: [{ label: '训练重量 (kg)', data: progressData }] },
-            options: { scales: { x: { type: 'time' } } }
-        });
-    };
 }
 
-function shareProgress() {
-    if (navigator.share) {
-        navigator.share({
-            title: '我的训练进度',
-            text: `用户名: ${currentUser.username}\n体重: ${currentUser.weight} kg\n查看详情: ${window.location.href}`,
-            url: window.location.href
-        }).catch(err => console.error('分享失败:', err));
-    } else {
-        alert('您的浏览器不支持分享功能，请复制链接手动分享。');
-    }
+function displayTrainingRecords() {
+    if (!currentUser) return;
+
+    const progressTx = db.transaction([PROGRESS_STORE], 'readonly');
+    const store = progressTx.objectStore(PROGRESS_STORE);
+    const request = store.index('user').getAll(currentUser.username);
+
+    request.onsuccess = () => {
+        const records = request.result;
+        const recordsDiv = document.getElementById('training-records');
+        if (recordsDiv) {
+            recordsDiv.innerHTML = '<h3>训练记录</h3>' + (records.length ? records.map(r => `
+                <p>${r.date}: ${r.exercise} - 重量: ${r.weight}kg, 次数: ${r.reps}</p>
+            `).join('') : '<p>暂无训练记录</p>');
+        }
+    };
 }
 
 function checkAchievements() {
@@ -377,41 +344,6 @@ function displayAchievements() {
     document.querySelector('.container').appendChild(achDiv);
 }
 
-function initVoiceInput() {
-    if (!('SpeechRecognition' in window || 'webkitSpeechRecognition' in window)) {
-        alert('您的浏览器不支持语音输入，请手动录入。');
-        return;
-    }
-    const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-    recognition.lang = 'zh-CN';
-    recognition.onresult = event => {
-        const transcript = event.results[0][0].transcript;
-        const [weight, reps] = transcript.match(/\d+/g) || [];
-        if (weight && reps) saveProgressManually(weight, reps);
-    };
-    document.getElementById('voice-input').addEventListener('click', () => {
-        recognition.start();
-        speakFeedback('请说重量和次数，例如“50公斤10次”');
-    });
-}
-
-function saveProgressManually(weight, reps) {
-    const exerciseName = prompt('请输入当前练习名称：');
-    const progressRecord = { exercise: exerciseName, weight, reps, date: new Date().toISOString().split('T')[0], user: currentUser.username };
-    const transaction = db.transaction([PROGRESS_STORE], 'readwrite');
-    transaction.objectStore(PROGRESS_STORE).add(progressRecord);
-    transaction.oncomplete = () => {
-        alert('训练记录已保存！');
-        renderProgressCharts();
-    };
-}
-
-function speakFeedback(text) {
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = 'zh-CN';
-    window.speechSynthesis.speak(utterance);
-}
-
 function startTimer(duration, exerciseName) {
     let timeLeft = duration;
     const timerDisplay = document.getElementById('timer') || document.createElement('div');
@@ -423,7 +355,6 @@ function startTimer(duration, exerciseName) {
         timerDisplay.textContent = `休息时间：${timeLeft} 秒`;
         if (timeLeft <= 0) {
             clearInterval(timerInterval);
-            speakFeedback(`时间到！开始${exerciseName}下一组`);
             timerDisplay.remove();
         }
         timeLeft--;
@@ -456,49 +387,35 @@ function calculateNutrition(event) {
     const weight = currentUser.weight;
     const bmr = 10 * weight + 6.25 * currentUser.height - 5 * 25 + 5;
     const tdee = bmr * activityLevel;
-    const protein = weight * 1.6;
+    const fatLossCalories = tdee - 500; // 减脂热量：每日减少500千卡
 
     document.getElementById('nutrition-result').innerHTML = `
-        <p>建议每日热量摄入: ${Math.round(tdee)} 千卡</p>
-        <p>建议蛋白质摄入: ${Math.round(protein)} 克</p>
+        <p>减脂建议每日热量摄入: ${Math.round(fatLossCalories)} 千卡</p>
+        <p>建议蛋白质摄入: ${Math.round(weight * 1.6)} 克</p>
     `;
 }
 
-function createChallenge() {
-    const challengeName = prompt('请输入挑战名称：');
-    const targetReps = prompt('目标次数：');
-    challenges.push({ name: challengeName, targetReps, participants: [{ username: currentUser.username, progress: 0 }] });
-    alert('挑战创建成功！邀请朋友加入。');
-    displayChallenges();
-}
+function calculateWeight(event) {
+    event.preventDefault();
+    const formData = new FormData(event.target);
+    const weight = parseFloat(formData.get('weight'));
+    const date = formData.get('date');
 
-function joinChallenge() {
-    const challengeName = prompt('输入挑战名称：');
-    const challenge = challenges.find(c => c.name === challengeName);
-    if (challenge) {
-        challenge.participants.push({ username: currentUser.username, progress: 0 });
-        alert('加入成功！');
+    if (!weight || isNaN(weight) || weight <= 0 || !date) {
+        alert('请正确填写体重和日期！');
+        return;
     }
-    displayChallenges();
-}
 
-function updateChallengeProgress(reps) {
-    challenges.forEach(c => {
-        if (c.participants.some(p => p.username === currentUser.username)) {
-            c.participants.find(p => p.username === currentUser.username).progress += reps;
-        }
-    });
-    displayChallenges();
-}
+    const weightRecord = { weight, date, user: currentUser.username };
+    const transaction = db.transaction([WEIGHT_STORE], 'readwrite');
+    const store = transaction.objectStore(WEIGHT_STORE);
+    store.add(weightRecord);
 
-function displayChallenges() {
-    const chalDiv = document.getElementById('challenges') || document.createElement('div');
-    chalDiv.id = 'challenges';
-    chalDiv.innerHTML = '<h3>挑战</h3>' + challenges.map(c => `
-        <p>${c.name} - 目标: ${c.targetReps} 次<br>
-        ${c.participants.map(p => `${p.username}: ${p.progress} 次`).join('<br>')}</p>
-    `).join('');
-    document.querySelector('.container').appendChild(chalDiv);
+    transaction.oncomplete = () => {
+        alert('体重已保存！');
+        event.target.reset();
+        updateUserWeight(weightRecord);
+    };
 }
 
 // 主题切换
@@ -517,4 +434,6 @@ window.addEventListener('load', () => {
     initDB();
     checkLoginStatus();
     if (document.getElementById('training-table')) renderTrainingPlan();
+    renderProgressCharts();
+    displayTrainingRecords();
 });

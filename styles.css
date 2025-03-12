@@ -28,13 +28,27 @@ body.dark-mode th { background-color: var(--primary-color); }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: Arial, sans-serif; background-color: var(--background-color); padding: 20px; text-align: center; line-height: 1.6; }
-.container { max-width: 800px; margin: auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); }
-h2 { color: #333; margin-bottom: 20px; }
-table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 16px; }
-th, td { border: 1px solid var(--table-border); padding: 10px; text-align: center; }
-th { background-color: var(--primary-color); color: white; font-weight: bold; }
-td { background-color: #fff; }
-.rest-day { background-color: var(--rest-day-bg); color: var(--rest-day-text); font-weight: bold; }
+.container { max-width: 1200px; margin: auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); position: relative; }
+.header { display: flex; justify-content: space-between; margin-bottom: 20px; }
+.menu, .user-profile { position: absolute; }
+.menu { left: 10px; }
+.user-profile { right: 10px; }
+.sidebar, .profile, .fat-loss-calculator { 
+    position: fixed; 
+    top: 20px; 
+    left: 20px; 
+    background: white; 
+    padding: 20px; 
+    border-radius: 10px; 
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); 
+    z-index: 1000; 
+    width: 300px; 
+    display: none; 
+}
+.main-content { margin-top: 60px; }
+.stats { margin-bottom: 20px; }
+.chart-container { width: 100%; max-width: 800px; margin: 20px auto; padding: 20px; background: white; border-radius: 10px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); }
+canvas { max-width: 100%; }
 .exercise { background: var(--primary-color); color: white; padding: 8px; border-radius: 5px; cursor: pointer; text-align: center; font-weight: bold; transition: background 0.3s ease; display: block; width: 100%; border: none; margin-bottom: 5px; }
 .exercise:hover { background: var(--hover-color); }
 .details { display: none; background: var(--details-bg); padding: 10px; border-radius: 5px; margin-top: 5px; text-align: left; }
@@ -46,14 +60,12 @@ td { background-color: #fff; }
 .login-form.active, .register-form.active { display: block; }
 .login-form input, .register-form input { width: 100%; padding: 8px; margin: 10px 0; border: 1px solid var(--table-border); border-radius: 5px; }
 .login-form button, .register-form button { background: var(--success-color); color: white; padding: 10px; border: none; border-radius: 5px; cursor: pointer; }
-.chart-container { width: 100%; max-width: 800px; margin: 20px auto; padding: 20px; background: white; border-radius: 10px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); }
-canvas { max-width: 100%; }
 .video-container { margin-top: 10px; text-align: center; }
 .video-container iframe { width: 100%; max-width: 560px; border-radius: 10px; }
 #timer { font-size: 24px; margin: 10px 0; color: var(--success-color); }
 
 @media (max-width: 600px) {
     .container { padding: 10px; }
-    table { font-size: 14px; }
+    .sidebar, .profile, .fat-loss-calculator { width: 90%; left: 5%; }
     .video-container iframe { max-width: 100%; height: auto; }
 }
