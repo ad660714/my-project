@@ -21,6 +21,95 @@ function initDB() {
     request.onerror = event => console.error('IndexedDB 初始化失败:', event.target.error);
 }
 
+function checkLoginStatus() {
+    const storedUser = localStorage.getItem('currentUser');
+    if (storedUser) {
+        currentUser = JSON.parse(storedUser);
+        updateUserInterface();
+    } else {
+        currentUser = null;
+        if (window.location.pathname.includes('training.html') || window.location.pathname.includes('weight.html')) {
+            window.location.href = 'index.html';
+        }
+    }
+}
+
+function updateUserInterface() {
+    const nameSpan = document.getElementById('user-name');
+    const weightSpan = document.getElementById('user-weight');
+    const heightSpan = document.getElementById('user-height');
+    if (nameSpan && weightSpan && heightSpan && currentUser) {
+        nameSpan.textContent = currentUser.username;
+        weightSpan.textContent = currentUser.weight || '未记录';
+        heightSpan.textContent = currentUser.height || '未记录';
+    }
+}
+
+function login() {
+    const username = document.getElementById('login-username').value;
+    const password = document.getElementById('login-password').value;
+    const transaction = db.transaction([USER_STORE], 'readonly');
+    const store = transaction.objectStore(USER_STORE);
+    const request = store.get(username);
+
+    request.onsuccess = () => {
+        const user = request.result;
+        if (user && user.password === password) { // 注意：实际应用中应使用哈希密码
+            currentUser = user;
+            localStorage.setItem('currentUser', JSON.stringify(user));
+            alert('登录成功！');
+            window.location.href = 'training.html';
+        } else {
+            alert('用户名或密码错误！');
+        }
+    };
+}
+
+function register() {
+    const username = document.getElementById('register-username').value;
+    const password = document.getElementById('register-password').value;
+    const weight = parseFloat(document.getElementById('register-weight').value);
+    const height = parseFloat(document.getElementById('register-height').value);
+
+    if (!username || !password || isNaN(weight) || isNaN(height) || weight <= 0 || height <= 0) {
+        alert('请正确填写所有字段！');
+        return;
+    }
+
+    const newUser = { username, password, weight, height, weights: [] };
+    const transaction = db.transaction([USER_STORE], 'readwrite');
+    const store = transaction.objectStore(USER_STORE);
+    const request = store.get(username);
+
+    request.onsuccess = () => {
+        if (request.result) {
+            alert('用户名已存在！');
+            return;
+        }
+        store.add(newUser);
+        transaction.oncomplete = () => {
+            alert('注册成功！请登录。');
+            showLogin();
+        };
+    };
+}
+
+function showRegister() {
+    document.querySelector('.login-form').classList.remove('active');
+    document.querySelector('.register-form').classList.add('active');
+}
+
+function showLogin() {
+    document.querySelector('.register-form').classList.remove('active');
+    document.querySelector('.login-form').classList.add('active');
+}
+
+function logout() {
+    currentUser = null;
+    localStorage.removeItem('currentUser');
+    window.location.href = 'index.html';
+}
+
 function renderTrainingPlan() {
     const days = [
         { day: '周一', exercises: [{ name: '杠铃卧推', video: 'https://www.youtube.com/embed/YQ4-2ZJ41P8' }, { name: '杠铃肩推' }, { name: '三头肌下压' }, { name: '平板支撑' }] },
@@ -68,13 +157,19 @@ function toggleVideo(id) {
     videoDiv.style.display = videoDiv.style.display === 'none' ? 'block' : 'none';
 }
 
+function toggleDetails(id) {
+    const details = document.getElementById(id);
+    const isHidden = details.getAttribute('aria-hidden') === 'true';
+    details.setAttribute('aria-hidden', !isHidden);
+}
+
 function saveWeight(event) {
     event.preventDefault();
     if (!currentUser) return;
 
     const form = event.target;
     const formData = new FormData(form);
-    const weight = formData.get('weight');
+    const weight = parseFloat(formData.get('weight'));
     const date = formData.get('date');
 
     if (!weight || isNaN(weight) || weight <= 0 || !date) {
@@ -101,14 +196,34 @@ function updateUserWeight(weightRecord) {
 
     request.onsuccess = () => {
         const user = request.result;
-        user.weights.push(weightRecord);
-        user.weight = weightRecord.weight;
-        store.put(user);
-        document.getElementById('user-weight').textContent = user.weight;
-        localStorage.setItem('currentUser', JSON.stringify(user));
-        currentUser = user;
+        if (user) {
+            user.weights = user.weights || [];
+            user.weights.push(weightRecord);
+            user.weight = weightRecord.weight;
+            store.put(user);
+            localStorage.setItem('currentUser', JSON.stringify(user));
+            currentUser = user;
+            updateUserInterface();
+        }
     };
 }
+
+function clearProgress() {
+    if (confirm('确定清除所有记录吗？')) {
+        const transaction = db.transaction([WEIGHT_STORE, PROGRESS_STORE], 'readwrite');
+        transaction.objectStore(WEIGHT_STORE).clear();
+        transaction.objectStore(PROGRESS_STORE).clear();
+        transaction.oncomplete = () => {
+            alert('记录已清除！');
+            location.reload();
+        };
+    }
+}
+
+// 主题切换
+document.getElementById('theme-toggle')?.addEventListener('click', () => {
+    document.body.classList.toggle('dark-mode');
+});
 
 window.addEventListener('load', () => {
     initDB();
