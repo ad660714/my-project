@@ -41,6 +41,13 @@
             <div class="stats">
                 <p id="bmi"></p>
                 <div class="chart-container">
+                    <select id="weight-range" onchange="renderProgressCharts()">
+                        <option value="all">全部</option>
+                        <option value="7d">近7日</option>
+                        <option value="1m">近1个月</option>
+                        <option value="6m">近6个月</option>
+                        <option value="1y">近1年</option>
+                    </select>
                     <h3>体重变化曲线</h3>
                     <canvas id="bodyWeightChart"></canvas>
                 </div>
@@ -55,6 +62,13 @@
             <form class="progress-form" onsubmit="calculateNutrition(event)">
                 <label>活动水平 (1-1.9):</label>
                 <input type="number" name="activity-level" placeholder="输入活动水平" step="0.1" min="1" max="1.9" required>
+                <label>性别:</label>
+                <select name="gender" required>
+                    <option value="male">男</option>
+                    <option value="female">女</option>
+                </select>
+                <label>年龄:</label>
+                <input type="number" name="age" placeholder="输入年龄" min="10" max="100" required>
                 <button type="submit">计算</button>
             </form>
             <div id="nutrition-result"></div>

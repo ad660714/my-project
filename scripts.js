@@ -166,10 +166,50 @@ function renderTrainingPlan() {
     const today = new Date().toLocaleDateString('zh-CN', { weekday: 'long' }).replace('星期', '周');
     const todayPlan = days.find(d => d.day === today) || { day: today, rest: true };
 
-    document.getElementById('today-training').innerHTML = `
+    const todayTrainingDiv = document.getElementById('today-training');
+    todayTrainingDiv.innerHTML = `
         <h3>今日训练 (${today})</h3>
-        <p>${todayPlan.rest ? '休息日 - 建议进行轻度活动或完全休息。' : `${todayPlan.focus}: ${todayPlan.exercises.map(e => e.name).join(', ')}`}</p>
+        <button class="exercise" onclick="toggleTodayDetails()">展开详情</button>
+        <div id="today-details" class="details" aria-hidden="true">
+            <p>${todayPlan.rest ? '休息日 - 建议进行轻度活动或完全休息。' : `${todayPlan.focus}`}</p>
+        </div>
     `;
+
+    if (!todayPlan.rest) {
+        const detailsDiv = document.getElementById('today-details');
+        const { fitnessLevel = 'intermediate', goal = 'muscle' } = currentUser || {};
+        const sets = { beginner: 3, intermediate: 3, advanced: 4 }[fitnessLevel];
+        const reps = { muscle: '8-12', strength: '4-6', endurance: '12-15' }[goal];
+        const rest = { beginner: 120, intermediate: 90, advanced: 60 }[fitnessLevel];
+
+        todayPlan.exercises.forEach((exercise, i) => {
+            const id = `today_exercise_${i}`;
+            detailsDiv.innerHTML += `
+                <button class="exercise" onclick="toggleDetails('${id}')">${exercise.name}</button>
+                <div id="${id}" class="details">
+                    <p>组数：${sets} 组 x ${reps} 次，休息 ${rest} 秒</p>
+                    <form class="progress-form" onsubmit="saveProgress(event, '${exercise.name}')">
+                        <input type="number" name="weight" placeholder="本次重量 (kg)" required>
+                        <input type="number" name="reps" placeholder="完成次数" required>
+                        <button type="submit">记录</button>
+                    </form>
+                    <div id="progress_${id}"></div>
+                    <button class="exercise" onclick="toggleVideo('${id}')">查看示范</button>
+                    <div id="video_${id}" class="video-container" style="display: none;">
+                        <iframe width="560" height="315" src="${exercise.video}" scrolling="no" border="0" frameborder="0" allow="autoplay; fullscreen" allowfullscreen></iframe>
+                    </div>
+                </div>
+            `;
+        });
+    }
+}
+
+function toggleTodayDetails() {
+    const details = document.getElementById('today-details');
+    if (details) {
+        const isHidden = details.getAttribute('aria-hidden') === 'true';
+        details.setAttribute('aria-hidden', !isHidden);
+    }
 }
 
 function toggleVideo(id) {
@@ -292,14 +332,36 @@ function renderProgressCharts() {
     const weightRequest = weightStore.index('user').getAll(currentUser.username);
 
     weightRequest.onsuccess = () => {
-        const weightData = weightRequest.result.map(w => ({ x: w.date, y: w.weight }));
+        const weightData = weightRequest.result.map(w => ({ x: new Date(w.date), y: w.weight }));
+        const range = document.getElementById('weight-range').value;
+        const filteredData = filterDataByRange(weightData, range);
+
         if (bodyWeightChart) bodyWeightChart.destroy();
         bodyWeightChart = new Chart(document.getElementById('bodyWeightChart'), {
             type: 'line',
-            data: { datasets: [{ label: '体重 (kg)', data: weightData }] },
-            options: { scales: { x: { type: 'time' } } }
+            data: { datasets: [{ label: '体重 (kg)', data: filteredData, borderColor: '#007BFF', fill: false }] },
+            options: {
+                scales: {
+                    x: { type: 'time', title: { display: true, text: '日期' } },
+                    y: { title: { display: true, text: '体重 (kg)' }, beginAtZero: false }
+                }
+            }
         });
     };
+}
+
+function filterDataByRange(data, range) {
+    const now = new Date();
+    return data.filter(item => {
+        const date = new Date(item.x);
+        switch (range) {
+            case '7d': return (now - date) <= 7 * 24 * 60 * 60 * 1000;
+            case '1m': return (now - date) <= 30 * 24 * 60 * 60 * 1000;
+            case '6m': return (now - date) <= 6 * 30 * 24 * 60 * 60 * 1000;
+            case '1y': return (now - date) <= 12 * 30 * 24 * 60 * 60 * 1000;
+            default: return true;
+        }
+    });
 }
 
 function displayTrainingRecords() {
@@ -384,14 +446,34 @@ function calculateNutrition(event) {
     event.preventDefault();
     const formData = new FormData(event.target);
     const activityLevel = parseFloat(formData.get('activity-level'));
+    const gender = formData.get('gender') || 'male';
+    const age = parseInt(formData.get('age')) || 25;
     const weight = currentUser.weight;
-    const bmr = 10 * weight + 6.25 * currentUser.height - 5 * 25 + 5;
+    const height = currentUser.height;
+
+    // 基础代谢率 (BMR) 计算，使用 Mifflin-St Jeor 公式
+    const bmr = gender === 'male' ? 
+        10 * weight + 6.25 * height - 5 * age + 5 : 
+        10 * weight + 6.25 * height - 5 * age - 161;
     const tdee = bmr * activityLevel;
     const fatLossCalories = tdee - 500; // 减脂热量：每日减少500千卡
+    const protein = weight * 1.6;
+
+    // 推荐食谱
+    const recipes = [
+        '早餐: 燕麦粥 (50g 燕麦 + 200ml 低脂奶) + 1个水煮蛋',
+        '午餐: 鸡胸肉 (150g) + 糙米 (100g) + 蒸西兰花 (100g)',
+        '晚餐: 鲑鱼 (120g) + 藜麦 (80g) + 混合蔬菜沙拉',
+        '加餐: 希腊酸奶 (100g) + 10颗杏仁'
+    ].join('<br>');
 
     document.getElementById('nutrition-result').innerHTML = `
+        <p>基础代谢率 (BMR): ${Math.round(bmr)} 千卡</p>
+        <p>每日总热量消耗 (TDEE): ${Math.round(tdee)} 千卡</p>
         <p>减脂建议每日热量摄入: ${Math.round(fatLossCalories)} 千卡</p>
-        <p>建议蛋白质摄入: ${Math.round(weight * 1.6)} 克</p>
+        <p>建议蛋白质摄入: ${Math.round(protein)} 克</p>
+        <h4>推荐食谱:</h4>
+        <p>${recipes}</p>
     `;
 }
 

@@ -47,14 +47,15 @@ body { font-family: Arial, sans-serif; background-color: var(--background-color)
 }
 .main-content { margin-top: 60px; }
 .stats { margin-bottom: 20px; }
-.chart-container { width: 100%; max-width: 800px; margin: 20px auto; padding: 20px; background: white; border-radius: 10px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); }
+.chart-container { width: 100%; max-width: 800px; margin: 20px auto; padding: 20px; background: white; border-radius: 10px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); position: relative; }
+.chart-container select { margin-bottom: 10px; padding: 5px; }
 canvas { max-width: 100%; }
 .exercise { background: var(--primary-color); color: white; padding: 8px; border-radius: 5px; cursor: pointer; text-align: center; font-weight: bold; transition: background 0.3s ease; display: block; width: 100%; border: none; margin-bottom: 5px; }
 .exercise:hover { background: var(--hover-color); }
 .details { display: none; background: var(--details-bg); padding: 10px; border-radius: 5px; margin-top: 5px; text-align: left; }
 .details[aria-hidden="false"] { display: block; }
 .progress-form { margin-top: 10px; padding: 10px; background: #f8f9fa; border-radius: 5px; }
-.progress-form input, .progress-form textarea { width: 100%; padding: 5px; margin: 5px 0; border: 1px solid var(--table-border); border-radius: 5px; }
+.progress-form input, .progress-form textarea, .progress-form select { width: 100%; padding: 5px; margin: 5px 0; border: 1px solid var(--table-border); border-radius: 5px; }
 .progress-form button { background: var(--success-color); color: white; padding: 5px 10px; border: none; border-radius: 5px; cursor: pointer; }
 .login-form, .register-form { max-width: 400px; margin: 20px auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); display: none; }
 .login-form.active, .register-form.active { display: block; }
