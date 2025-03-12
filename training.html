@@ -6,11 +6,12 @@
     <title>训练计划 - 增肌训练计划</title>
     <link rel="stylesheet" href="styles.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icon.png">
 </head>
 <body>
     <div class="container">
         <button id="theme-toggle" class="exercise">切换深色模式</button>
-        
         <div id="user-welcome">
             <h3>欢迎, <span id="user-name"></span>!</h3>
             <button class="exercise" onclick="logout()">退出登录</button>
@@ -18,11 +19,10 @@
             <p>体重: <span id="user-weight"></span> kg</p>
             <p>身高: <span id="user-height"></span> cm</p>
         </div>
-
         <h2>增肌训练计划 - 一周循环</h2>
         <p>以下为一周训练计划，训练 5 天，休息 2 天（周六、周日）。</p>
         <table id="training-table"></table>
-
+        <button id="voice-input" class="exercise">语音输入</button>
         <button class="exercise" aria-expanded="false" aria-controls="progress_summary" onclick="toggleDetails('progress_summary')">查看训练进度</button>
         <div id="progress_summary" class="details" aria-hidden="true">
             <p>以下是您的训练进度。</p>
@@ -35,16 +35,25 @@
                 <h3>体重变化曲线</h3>
                 <canvas id="bodyWeightChart"></canvas>
             </div>
+            <button class="exercise" onclick="shareProgress()">分享进度</button>
+            <button class="exercise" onclick="checkAchievements()">查看成就</button>
             <button class="exercise" onclick="clearProgress()">清除所有记录</button>
+            <div id="achievements"></div>
+            <div id="challenges"></div>
         </div>
+        <button class="exercise" onclick="createChallenge()">创建挑战</button>
+        <button class="exercise" onclick="joinChallenge()">加入挑战</button>
+        <div id="training-suggestion" class="details" aria-hidden="true"></div>
     </div>
-
     <script src="scripts.js"></script>
     <script>
         window.addEventListener('load', () => {
             checkLoginStatus();
             if (currentUser) {
                 renderTrainingPlan();
+                renderProgressCharts();
+                analyzeTrainingProgress();
+                initVoiceInput();
             }
         });
     </script>

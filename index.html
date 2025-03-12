@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>登录 - 增肌训练计划</title>
     <link rel="stylesheet" href="styles.css">
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icon.png">
 </head>
 <body>
     <div class="container">
@@ -22,6 +24,16 @@
             <input type="password" id="register-password" placeholder="密码" required>
             <input type="number" id="register-weight" placeholder="当前体重 (kg)" required>
             <input type="number" id="register-height" placeholder="身高 (cm)" required>
+            <select id="fitness-level" required>
+                <option value="beginner">初级</option>
+                <option value="intermediate" selected>中级</option>
+                <option value="advanced">高级</option>
+            </select>
+            <select id="goal" required>
+                <option value="muscle" selected>增肌</option>
+                <option value="strength">力量</option>
+                <option value="endurance">耐力</option>
+            </select>
             <button onclick="register()">注册</button>
             <p>已有账号？<a href="#" onclick="showLogin()">登录</a></p>
         </div>

@@ -1,0 +1,15 @@
+{
+    "name": "增肌训练计划",
+    "short_name": "FitnessApp",
+    "start_url": "/index.html",
+    "display": "standalone",
+    "background_color": "#f4f4f4",
+    "theme_color": "#007BFF",
+    "icons": [
+        {
+            "src": "icon.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        }
+    ]
+}

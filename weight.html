@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>记录体重 - 增肌训练计划</title>
     <link rel="stylesheet" href="styles.css">
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icon.png">
 </head>
 <body>
     <div class="container">
@@ -22,6 +24,13 @@
             <input type="date" name="date" required>
             <button type="submit">保存</button>
         </form>
+        <h2>营养建议</h2>
+        <form class="progress-form" onsubmit="calculateNutrition(event)">
+            <label>活动水平 (1-1.9):</label>
+            <input type="number" name="activity-level" placeholder="输入活动水平" step="0.1" min="1" max="1.9" required>
+            <button type="submit">计算</button>
+        </form>
+        <div id="nutrition-result"></div>
     </div>
     <script src="scripts.js"></script>
     <script>
