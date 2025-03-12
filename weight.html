@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>记录体重 - 增肌训练计划</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <button id="theme-toggle" class="exercise">切换深色模式</button>
+        <div id="user-welcome">
+            <h3>欢迎, <span id="user-name"></span>!</h3>
+            <button class="exercise" onclick="logout()">退出登录</button>
+            <button class="exercise" onclick="window.location.href='training.html'">返回训练计划</button>
+        </div>
+        <h2>记录体重</h2>
+        <form class="progress-form" onsubmit="saveWeight(event)">
+            <label>当前体重 (kg):</label>
+            <input type="number" name="weight" placeholder="输入当前体重" required>
+            <label>记录日期:</label>
+            <input type="date" name="date" required>
+            <button type="submit">保存</button>
+        </form>
+    </div>
+    <script src="scripts.js"></script>
+    <script>
+        window.addEventListener('load', checkLoginStatus);
+    </script>
+</body>
+</html>

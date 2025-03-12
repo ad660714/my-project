@@ -1,0 +1,50 @@
+:root {
+    --primary-color: #007BFF;
+    --hover-color: #0056b3;
+    --background-color: #f4f4f4;
+    --details-bg: #e8f0ff;
+    --table-border: #ddd;
+    --rest-day-bg: #f8d7da;
+    --rest-day-text: #5a1a20;
+    --success-color: #28a745;
+    --warning-color: #ffc107;
+}
+
+body.dark-mode {
+    --primary-color: #66b0ff;
+    --hover-color: #99c7ff;
+    --background-color: #1a1a1a;
+    --details-bg: #2c3e50;
+    --table-border: #444;
+    --rest-day-bg: #5c2d2d;
+    --rest-day-text: #f5c6cb;
+    --success-color: #2ecc71;
+    --warning-color: #f1c40f;
+}
+
+body.dark-mode .container { background: #2a2a2a; color: #f4f4f4; }
+body.dark-mode td { background-color: #333; }
+body.dark-mode th { background-color: var(--primary-color); }
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: Arial, sans-serif; background-color: var(--background-color); padding: 20px; text-align: center; line-height: 1.6; }
+.container { max-width: 800px; margin: auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); }
+h2 { color: #333; margin-bottom: 20px; }
+table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 16px; }
+th, td { border: 1px solid var(--table-border); padding: 10px; text-align: center; }
+th { background-color: var(--primary-color); color: white; font-weight: bold; }
+td { background-color: #fff; }
+.rest-day { background-color: var(--rest-day-bg); color: var(--rest-day-text); font-weight: bold; }
+.exercise { background: var(--primary-color); color: white; padding: 8px; border-radius: 5px; cursor: pointer; text-align: center; font-weight: bold; transition: background 0.3s ease; display: block; width: 100%; border: none; margin-bottom: 5px; }
+.exercise:hover { background: var(--hover-color); }
+.details { display: none; background: var(--details-bg); padding: 10px; border-radius: 5px; margin-top: 5px; text-align: left; }
+.details[aria-hidden="false"] { display: block; }
+.progress-form { margin-top: 10px; padding: 10px; background: #f8f9fa; border-radius: 5px; }
+.progress-form input, .progress-form textarea { width: 100%; padding: 5px; margin: 5px 0; border: 1px solid var(--table-border); border-radius: 5px; }
+.progress-form button { background: var(--success-color); color: white; padding: 5px 10px; border: none; border-radius: 5px; cursor: pointer; }
+.login-form, .register-form { max-width: 400px; margin: 20px auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); display: none; }
+.login-form.active, .register-form.active { display: block; }
+.login-form input, .register-form input { width: 100%; padding: 8px; margin: 10px 0; border: 1px solid var(--table-border); border-radius: 5px; }
+.login-form button, .register-form button { background: var(--success-color); color: white; padding: 10px; border: none; border-radius: 5px; cursor: pointer; }
+.chart-container { width: 100%; max-width: 800px; margin: 20px auto; padding: 20px; background: white; border-radius: 10px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); }
+canvas { max-width: 100%; }
